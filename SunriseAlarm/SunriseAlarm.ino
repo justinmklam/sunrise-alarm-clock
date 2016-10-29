@@ -23,8 +23,11 @@
 // Define the array of leds
 CRGB leds[NUM_LEDS];
 
+// Function prototypes
+void wipeByRow(const CRGB &color, uint8_t led_delay, bool omitLastRow=true);
+
 void setup() { 
-  delay(3000); // 3 second delay for recovery
+  delay(1000); // 1 second delay for recovery
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
 }
@@ -58,11 +61,10 @@ void sunrise(uint8_t type)
 
 		break;
     
-	case 1:		// slowly turn on from black to red
-		val = 1;	
+	case 1:		// slowly turn on from black to red (to make transition from off to bright less jarring)
 		delay_scale_factor = TRANSITION_OFF;
 		if (direction > 0)
-			wipeByRow(CHSV(hue, saturatn, val), LED_DELAY*delay_scale_factor);
+			wipeByRow(CHSV(hue, saturatn, 1), LED_DELAY*delay_scale_factor);
 		else
 			wipeByRow(CRGB::Black, LED_DELAY*delay_scale_factor);
 
@@ -121,10 +123,19 @@ void sunrise(uint8_t type)
 }
 
 // Function: Turns on leds one row at a time
-void wipeByRow(const CRGB &color, uint8_t led_delay) {
-	//uint8_t leds_per_row = 10;
+void wipeByRow(const CRGB &color, uint8_t led_delay, bool omitLastRow) {
+	static bool firstpass = true;
+	static uint8_t end;
 
-	for (uint8_t i = 0; i < NUM_LEDS; i++) {
+	if (firstpass = true) {
+		if (omitLastRow)
+			end = NUM_LEDS - LEDS_PER_ROW - 1;
+		else
+			end = NUM_LEDS;
+		firstpass = false;
+	}
+
+	for (uint8_t i = 0; i < end; i++) {
 		// turn on leds by row
 		for (uint8_t j = 0; j < LEDS_PER_ROW; j++) {
 			leds[i + j] = color;
