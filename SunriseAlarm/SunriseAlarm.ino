@@ -2,6 +2,7 @@
 
 // How many leds in your strip?
 #define NUM_LEDS 120
+#define LEDS_PER_ROW 10
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
 // need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
@@ -32,31 +33,33 @@ void loop() {
   sunrise(2);
 }
 
-// Type 1: Forward only, Type 2: Forward and reverse
+// Function: Simulates sunrise colours by smoothly transitioning through black (off), red, orange, yellow.
+// Params: Type 1 = Forward only, Type 2 = Forward and reverse
 void sunrise(uint8_t type)
 {
-  static uint8_t hue = 0;
-  static uint8_t saturatn = 255;
-  static uint8_t val = 0;
-  static uint8_t state = 0;
-  
-  static int8_t direction = 1;
-  static float delay_scale_factor = 1;
+	static uint8_t hue, saturatn, val;
+	static uint8_t state = 0;
+	static int8_t direction;
+	static float delay_scale_factor;
 
-  switch(state) {
-	  default:	// black
+	switch(state) {
+	default:	// turn off lamp
 		FastLED.showColor(CRGB::Black);
+
+		// Initialize / reset values
 		val = 0;
 		hue = 0;
 		saturatn = 255;
-		state++;
 		direction = 1;
-		delay(1000);
 		delay_scale_factor = 1;
+		state++;
+
+		delay(1000);
+
 		break;
     
 	case 1:		// slowly turn on from black to red
-		val = 1;
+		val = 1;	
 		delay_scale_factor = TRANSITION_OFF;
 		if (direction > 0)
 			wipeByRow(CHSV(hue, saturatn, val), LED_DELAY*delay_scale_factor);
@@ -111,22 +114,23 @@ void sunrise(uint8_t type)
 	case 5:
 		// do nothing
 		break;
-  }
+	}
 
-  if (state != 1)
-	delay(LED_DELAY*delay_scale_factor);
+	if (state != 1)
+		delay(LED_DELAY*delay_scale_factor);
 }
 
+// Function: Turns on leds one row at a time
 void wipeByRow(const CRGB &color, uint8_t led_delay) {
-	uint8_t leds_per_row = 10;
+	//uint8_t leds_per_row = 10;
 
 	for (uint8_t i = 0; i < NUM_LEDS; i++) {
 		// turn on leds by row
-		for (uint8_t j = 0; j < leds_per_row; j++) {
+		for (uint8_t j = 0; j < LEDS_PER_ROW; j++) {
 			leds[i + j] = color;
 		}
 		FastLED.show();
 		delay(led_delay);
-		i += leds_per_row;
+		i += LEDS_PER_ROW;
 	}
 }
