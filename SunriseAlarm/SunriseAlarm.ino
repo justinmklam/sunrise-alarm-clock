@@ -8,8 +8,16 @@
 // ground, and power), like the LPD8806 define both DATA_PIN and CLOCK_PIN
 #define DATA_PIN 6
 #define CLOCK_PIN 13
-#define LED_DELAY 50
+#define LED_DELAY 13
 #define BRIGHTNESS 255
+#define HUE 23
+#define SATURATION 245
+
+// Normalizing parameters to make each transition take the same amount of time. Use spreadsheet to determine these scaling factors
+#define TRANSITION_OFF 1
+#define TRANSITION_BRIGHTNESS 1
+#define TRANSITION_HUE 11.04
+#define TRANSITION_SATURATN 25.4
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -21,66 +29,19 @@ void setup() {
 }
 
 void loop() { 
-//  Sunrise();
-//  fill();
-  huehuehue();
+  sunrise(2);
 }
 
-// turn on the leds like a sunrise red - orange - white (brightest)
-void Sunrise()
-{
-  // sunrise
-  CRGB SunColors[3];
-  SunColors[0] = CRGB::Red;
-  SunColors[1] = CRGB::Orange;
-  SunColors[2] = CRGB::Yellow;
-  
-  for(int c = 0; c<3; c++ )
-  {
-    for(int i = 0; i < NUM_LEDS; i++ )
-    {  
-      leds[i] = SunColors[c];
-      FastLED.show();
-      delay(25);
-    }
-  }
-}
-
-void fill()
-{
-  uint32_t ledarr = 4;
-  CRGB Colors[ledarr];
-  Colors[0] = CRGB::Red;
-  Colors[1] = 0xF5B041;
-  Colors[2] = CRGB::Yellow;
-  Colors[3] = CRGB::Turquoise;
-
-  for(int i=0; i < ledarr; i++)
-  {
-    fill_solid(leds, NUM_LEDS, Colors[i]);
-    FastLED.show();
-    delay(LED_DELAY);
-  }
-//      fill_solid(leds, NUM_LEDS, CRGB::Red); // Set all to red.
-//      FastLED.show();
-//      delay(LED_DELAY);
-//      fill_solid(leds, NUM_LEDS, CRGB::Green); // Set all to red.
-//      FastLED.show();
-//      delay(LED_DELAY);
-//      fill_solid(leds, NUM_LEDS, CRGB::Orange); // Set all to red.
-//      FastLED.show();
-//      delay(LED_DELAY);
-}
-
-void huehuehue()
+// Type 1: Forward only, Type 2: Forward and reverse
+void sunrise(uint8_t type)
 {
   static uint8_t hue = 0;
   static uint8_t saturatn = 255;
   static uint8_t val = 0;
   static uint8_t state = 0;
   
-  static uint8_t direction = 1;
-  static uint8_t delay_scale_factor = 1;
+  static int8_t direction = 1;
+  static float delay_scale_factor = 1;
 
   switch(state) {
 	  default:	// black
@@ -94,60 +55,78 @@ void huehuehue()
 		delay_scale_factor = 1;
 		break;
     
-	case 1:
+	case 1:		// slowly turn on from black to red
 		val = 1;
-		for(uint8_t i=0; i < NUM_LEDS; i++) {
-//			for(uint8_t j=0; j < 10; j++) {
-        if(direction > 0)
-				  leds[i] = CHSV(hue, saturatn, val);
-         else
-          leds[i] = CRGB::Black;
-//			}
-			FastLED.show();
-			delay(LED_DELAY);
-//			i += 10;
-		}
+		delay_scale_factor = TRANSITION_OFF;
+		if (direction > 0)
+			wipeByRow(CHSV(hue, saturatn, val), LED_DELAY*delay_scale_factor);
+		else
+			wipeByRow(CRGB::Black, LED_DELAY*delay_scale_factor);
+
 		state += direction;
 		break;
     
 	case 2:		// ramp up brightness
-		delay_scale_factor = 1;
-    FastLED.showColor(CHSV(hue, saturatn, val));
-	  val += direction;
-      if(val >= 255) {
-        state += direction;
-	  }
-      break;
+		delay_scale_factor = TRANSITION_BRIGHTNESS;
+		FastLED.showColor(CHSV(hue, saturatn, val));
+		val += direction;
+
+		if(val >= BRIGHTNESS) {
+			state += direction;
+		}
+		break;
       
    case 3:		// change between red and yellow
-		delay_scale_factor = 3;
-      FastLED.showColor(CHSV(hue, saturatn, 255));
-	  hue += direction;
-      if(hue > 128) {
-        state += direction;
-	  }
-      break;
+		delay_scale_factor = TRANSITION_HUE;
+		FastLED.showColor(CHSV(hue, saturatn, BRIGHTNESS));
+		hue += direction;
+
+		if(hue > HUE) {
+			state += direction;
+		}
+		break;
       
     case 4:		// change between yellow and white
-		delay_scale_factor = 1;
-      FastLED.showColor(CHSV(hue, saturatn, 255));
-	  saturatn -= direction;
-	  
-      if(saturatn <= 245) {
-		  state += direction;
-		direction = -1;
-		delay(1000);
-	  }
-      break;
-	  
-	case 5:		// change between white and yellow
-		delay_scale_factor = 1;
-		FastLED.showColor(CHSV(hue, saturatn, 255));
+		delay_scale_factor = TRANSITION_SATURATN;
+		FastLED.showColor(CHSV(hue, saturatn, BRIGHTNESS));
 		saturatn -= direction;
-		if (saturatn >= 255) {
-			state += 2*direction;
+	  
+		// forward direction
+		if(direction > 0 && saturatn <= SATURATION) {
+			switch (type) {
+			case 1:		// forward only
+				state += direction;
+				break;
+			case 2:		// forward and reverse
+				direction = -1;
+				delay(1000);
+			}
 		}
+		// reverse direction
+		else if (direction < 0 && saturatn >= 255) {
+			state += direction;
+		}
+		break;
+
+	case 5:
+		// do nothing
+		break;
   }
 
-  delay(LED_DELAY*delay_scale_factor);
+  if (state != 1)
+	delay(LED_DELAY*delay_scale_factor);
+}
+
+void wipeByRow(const CRGB &color, uint8_t led_delay) {
+	uint8_t leds_per_row = 10;
+
+	for (uint8_t i = 0; i < NUM_LEDS; i++) {
+		// turn on leds by row
+		for (uint8_t j = 0; j < leds_per_row; j++) {
+			leds[i + j] = color;
+		}
+		FastLED.show();
+		delay(led_delay);
+		i += leds_per_row;
+	}
 }
