@@ -4,12 +4,12 @@
 #define CHAR_HEIGHT 5
 #define CHAR_WIDTH 4
 
-uint8_t* getNum(uint8_t num) {
-	switch (num) {
-	case 0:
-		return *zero;
-	}
-}
+//uint8_t* getNum(uint8_t num) {
+//	switch (num) {
+//	case 0:
+//		return *zero;
+//	}
+//}
 
 uint8_t zero[CHAR_HEIGHT][CHAR_WIDTH] = {
 	{ 0,1,1,1 },

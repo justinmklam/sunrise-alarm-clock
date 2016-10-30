@@ -41,12 +41,14 @@ void setup() {
 }
 
 void loop() { 
-  //sunrise(1);
-	//turnOff();
-	drawchar(zero, CRGB::Blue);
-	delay(3000);
-	drawchar(seven, CRGB::Blue);
-	delay(3000);
+	sunrise(1);
+	
+	//drawchar(zero, CRGB::Blue);
+	//delay(3000);
+	//drawchar(seven, CRGB::Blue);
+	//delay(3000);
+	//drawchar(eight, CRGB::Blue);
+	//delay(3000);
 }
 
 // Function: Simulates sunrise colours by smoothly transitioning through black (off), red, orange, yellow.
@@ -63,7 +65,7 @@ void sunrise(uint8_t type)
 		FastLED.showColor(CRGB::Black);
 
 		// Initialize / reset values
-		val = 0;
+		val = 2;
 		hue = 0;
 		saturatn = 255;
 		direction = 1;
@@ -92,6 +94,8 @@ void sunrise(uint8_t type)
 		if(val >= BRIGHTNESS) {
 			state += direction;
 		}
+
+		delay(LED_DELAY*delay_scale_factor);
 		break;
       
    case 3:		// change between red and yellow
@@ -102,6 +106,8 @@ void sunrise(uint8_t type)
 		if(hue > HUE) {
 			state += direction;
 		}
+
+		delay(LED_DELAY*delay_scale_factor);
 		break;
       
     case 4:		// change between yellow and white
@@ -124,6 +130,8 @@ void sunrise(uint8_t type)
 		else if (direction < 0 && saturatn >= 255) {
 			state += direction;
 		}
+
+		delay(LED_DELAY*delay_scale_factor);
 		break;
 
 	case 5:
@@ -132,8 +140,8 @@ void sunrise(uint8_t type)
 		break;
 	}
 
-	if (state != 1)
-		delay(LED_DELAY*delay_scale_factor);
+	//if (state != 1)
+		//delay(LED_DELAY*delay_scale_factor);
 }
 
 // Function: Turns on leds one row at a time
@@ -143,7 +151,7 @@ void wipeByRow(const CRGB &color, uint8_t led_delay, bool omitLastRow) {
 
 	if (firstpass = true) {
 		if (omitLastRow)
-			end = NUM_LEDS - LEDS_PER_ROW - 1;
+			end = NUM_LEDS - LEDS_PER_ROW;
 		else
 			end = NUM_LEDS;
 		firstpass = false;
