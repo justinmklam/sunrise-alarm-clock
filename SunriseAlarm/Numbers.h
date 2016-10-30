@@ -91,4 +91,13 @@ uint8_t nine[CHAR_HEIGHT][CHAR_WIDTH] = {
 	{ 0,1,1,1 }
 };
 
+uint8_t empty[CHAR_HEIGHT][CHAR_WIDTH] = {
+	{ 0,0,0,0 },
+	{ 0,0,0,0 },
+	{ 0,0,0,0 },
+	{ 0,0,0,0 },
+	{ 0,0,0,0 }
+};
+
+
 #endif

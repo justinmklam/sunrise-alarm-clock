@@ -12,16 +12,18 @@
 #define CLOCK_PIN 13
 #define LED_DELAY 13
 #define BRIGHTNESS 255
-#define HUE 23
-#define SATURATION 245
+#define HUE_ORANGE 32
+#define HUE_YELLOW 43
+#define SATURATION 168
 
-#define CHAR_OFFSET 3
+#define CHAR_OFFSET 0
 
 // Normalizing parameters to make each transition take the same amount of time. Use spreadsheet to determine these scaling factors
 #define TRANSITION_OFF 1
 #define TRANSITION_BRIGHTNESS 1
-#define TRANSITION_HUE 11.04
-#define TRANSITION_SATURATN 25.4
+#define TRANSITION_HUE_ORANGE 7.94
+#define TRANSITION_HUE_YELLOW 23.09
+#define TRANSITION_SATURATN 2.92
 
 // Global variables
 uint8_t hue, saturatn, val;
@@ -31,6 +33,7 @@ CRGB leds[NUM_LEDS];
 
 // Function prototypes
 void wipeByRow(const CRGB &color, uint8_t led_delay, bool omitLastRow=true);
+//void drawPixelNum(uint8_t number[CHAR_HEIGHT][CHAR_WIDTH], const CRGB &color, bool offset = false);
 
 void setup() { 
 	Serial.begin(115200);
@@ -42,7 +45,7 @@ void setup() {
 void loop() { 
 	sunrise(1);
 
-	//for (uint8_t i = 0; i <= 9; i++) {
+	//for (uint8_t i = 0; i <= 30; i++) {
 	//	drawNum(i, CRGB::DarkCyan);
 	//	delay(250);
 	//}
@@ -96,21 +99,33 @@ void sunrise(uint8_t type)
 		delay(LED_DELAY*delay_scale_factor);
 		break;
       
-   case 3:		// change between red and yellow
-		delay_scale_factor = TRANSITION_HUE;
-		FastLED.showColor(CHSV(hue, saturatn, BRIGHTNESS));
+   case 3:		// change between red and orange
+		delay_scale_factor = TRANSITION_HUE_ORANGE;
+		FastLED.showColor(CHSV(hue, saturatn, val));
 		hue += direction;
 
-		if(hue > HUE) {
+		if(hue > HUE_ORANGE) {
 			state += direction;
 		}
 
 		delay(LED_DELAY*delay_scale_factor);
 		break;
+
+   case 4:		// change between orange and yellow
+	   delay_scale_factor = TRANSITION_HUE_YELLOW;
+	   FastLED.showColor(CHSV(hue, saturatn, val));
+	   hue += direction;
+
+	   if (hue > HUE_YELLOW) {
+		   state += direction;
+	   }
+
+	   delay(LED_DELAY*delay_scale_factor);
+	   break;
       
-    case 4:		// change between yellow and white
+    case 5:		// change between yellow and white
 		delay_scale_factor = TRANSITION_SATURATN;
-		FastLED.showColor(CHSV(hue, saturatn, BRIGHTNESS));
+		FastLED.showColor(CHSV(hue, saturatn, val));
 		saturatn -= direction;
 	  
 		// forward direction
@@ -132,7 +147,8 @@ void sunrise(uint8_t type)
 		delay(LED_DELAY*delay_scale_factor);
 		break;
 
-	case 5:
+	case 6:
+		delay(3000);
 		turnOff();
 		state = 0;
 		break;
@@ -180,44 +196,63 @@ void turnOff() {
 }
 
 void drawNum(uint8_t num, const CRGB &color) {
-	switch (num) {
-	case 0:
-		drawPixelNum(zero, color);
-		break;
-	case 1:
-		drawPixelNum(one, color);
-		break;
-	case 2:
-		drawPixelNum(two, color);
-		break;
-	case 3:
-		drawPixelNum(three, color);
-		break;
-	case 4:
-		drawPixelNum(four, color);
-		break;
-	case 5:
-		drawPixelNum(five, color);
-		break;
-	case 6:
-		drawPixelNum(six, color);
-		break;
-	case 7:
-		drawPixelNum(seven, color);
-		break;
-	case 8:
-		drawPixelNum(eight, color);
-		break;
-	case 9:
-		drawPixelNum(nine, color);
-		break;
+	uint8_t original_num = num;
+	bool doubleDigit = false;
+
+	while (num > 0) {
+		uint8_t digit = num % 10;
+
+		switch (digit) {
+		case 0:
+			drawPixelNum(zero, color, doubleDigit);
+			break;
+		case 1:
+			drawPixelNum(one, color, doubleDigit);
+			break;
+		case 2:
+			drawPixelNum(two, color, doubleDigit);
+			break;
+		case 3:
+			drawPixelNum(three, color, doubleDigit);
+			break;
+		case 4:
+			drawPixelNum(four, color, doubleDigit);
+			break;
+		case 5:
+			drawPixelNum(five, color, doubleDigit);
+			break;
+		case 6:
+			drawPixelNum(six, color, doubleDigit);
+			break;
+		case 7:
+			drawPixelNum(seven, color, doubleDigit);
+			break;
+		case 8:
+			drawPixelNum(eight, color, doubleDigit);
+			break;
+		case 9:
+			drawPixelNum(nine, color, doubleDigit);
+			break;
+		}
+		doubleDigit = true;
+		color = CRGB::Green;
+
+		if (original_num < 10) {
+			drawPixelNum(empty, color, doubleDigit);
+		}
+		num /= 10;
 	}
 }
 
-void drawPixelNum(uint8_t number[CHAR_HEIGHT][CHAR_WIDTH], const CRGB &color) {
+void drawPixelNum(uint8_t number[CHAR_HEIGHT][CHAR_WIDTH], const CRGB &color, bool doubleDigit) {
 	uint8_t height_offset = 2;
 	uint8_t width_offset = 2;
 	uint8_t m = CHAR_OFFSET;
+
+	if (doubleDigit)
+		m = CHAR_OFFSET + 1;
+	else
+		m = CHAR_OFFSET + CHAR_WIDTH;
 
 	// loop through character matrix
 	for (uint8_t i = 0; i < CHAR_HEIGHT; i++) {
