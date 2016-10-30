@@ -25,7 +25,6 @@
 
 // Global variables
 uint8_t hue, saturatn, val;
-//Numbers numbers;
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -42,13 +41,12 @@ void setup() {
 
 void loop() { 
 	sunrise(1);
+
+	//for (uint8_t i = 0; i <= 9; i++) {
+	//	drawNum(i, CRGB::DarkCyan);
+	//	delay(250);
+	//}
 	
-	//drawchar(zero, CRGB::Blue);
-	//delay(3000);
-	//drawchar(seven, CRGB::Blue);
-	//delay(3000);
-	//drawchar(eight, CRGB::Blue);
-	//delay(3000);
 }
 
 // Function: Simulates sunrise colours by smoothly transitioning through black (off), red, orange, yellow.
@@ -181,7 +179,42 @@ void turnOff() {
 	wipeByRow(CRGB::Black, 0);
 }
 
-void drawchar(uint8_t number[CHAR_HEIGHT][CHAR_WIDTH], const CRGB &color) {
+void drawNum(uint8_t num, const CRGB &color) {
+	switch (num) {
+	case 0:
+		drawPixelNum(zero, color);
+		break;
+	case 1:
+		drawPixelNum(one, color);
+		break;
+	case 2:
+		drawPixelNum(two, color);
+		break;
+	case 3:
+		drawPixelNum(three, color);
+		break;
+	case 4:
+		drawPixelNum(four, color);
+		break;
+	case 5:
+		drawPixelNum(five, color);
+		break;
+	case 6:
+		drawPixelNum(six, color);
+		break;
+	case 7:
+		drawPixelNum(seven, color);
+		break;
+	case 8:
+		drawPixelNum(eight, color);
+		break;
+	case 9:
+		drawPixelNum(nine, color);
+		break;
+	}
+}
+
+void drawPixelNum(uint8_t number[CHAR_HEIGHT][CHAR_WIDTH], const CRGB &color) {
 	uint8_t height_offset = 2;
 	uint8_t width_offset = 2;
 	uint8_t m = CHAR_OFFSET;
