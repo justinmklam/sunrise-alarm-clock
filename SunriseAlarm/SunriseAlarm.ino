@@ -1,4 +1,5 @@
 #include "FastLED.h"
+#include "Numbers.h"
 
 // How many leds in your strip?
 #define NUM_LEDS 120
@@ -14,11 +15,17 @@
 #define HUE 23
 #define SATURATION 245
 
+#define CHAR_OFFSET 3
+
 // Normalizing parameters to make each transition take the same amount of time. Use spreadsheet to determine these scaling factors
 #define TRANSITION_OFF 1
 #define TRANSITION_BRIGHTNESS 1
 #define TRANSITION_HUE 11.04
 #define TRANSITION_SATURATN 25.4
+
+// Global variables
+uint8_t hue, saturatn, val;
+//Numbers numbers;
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -27,20 +34,26 @@ CRGB leds[NUM_LEDS];
 void wipeByRow(const CRGB &color, uint8_t led_delay, bool omitLastRow=true);
 
 void setup() { 
-  delay(1000); // 1 second delay for recovery
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(BRIGHTNESS);
+	Serial.begin(115200);
+	delay(1000); // 1 second delay for recovery
+	FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+	FastLED.setBrightness(BRIGHTNESS);
 }
 
 void loop() { 
-  sunrise(2);
+  //sunrise(1);
+	//turnOff();
+	drawchar(zero, CRGB::Blue);
+	delay(3000);
+	drawchar(seven, CRGB::Blue);
+	delay(3000);
 }
 
 // Function: Simulates sunrise colours by smoothly transitioning through black (off), red, orange, yellow.
 // Params: Type 1 = Forward only, Type 2 = Forward and reverse
 void sunrise(uint8_t type)
 {
-	static uint8_t hue, saturatn, val;
+	/*static uint8_t hue, saturatn, val;*/
 	static uint8_t state = 0;
 	static int8_t direction;
 	static float delay_scale_factor;
@@ -99,10 +112,10 @@ void sunrise(uint8_t type)
 		// forward direction
 		if(direction > 0 && saturatn <= SATURATION) {
 			switch (type) {
-			case 1:		// forward only
+			case 1:		// type: forward only
 				state += direction;
 				break;
-			case 2:		// forward and reverse
+			case 2:		// type: forward and reverse
 				direction = -1;
 				delay(1000);
 			}
@@ -114,7 +127,8 @@ void sunrise(uint8_t type)
 		break;
 
 	case 5:
-		// do nothing
+		turnOff();
+		state = 0;
 		break;
 	}
 
@@ -145,3 +159,39 @@ void wipeByRow(const CRGB &color, uint8_t led_delay, bool omitLastRow) {
 		i += LEDS_PER_ROW;
 	}
 }
+
+// Fade from current colour to black
+void turnOff() {
+	uint8_t off_delay = 2;
+	uint8_t current_value = val;
+	
+	while (current_value >= 1) {
+		FastLED.showColor(CHSV(hue, saturatn, current_value));
+		current_value -= 1;
+		//delay(off_delay);
+	}
+	wipeByRow(CRGB::Black, 0);
+}
+
+void drawchar(uint8_t number[CHAR_HEIGHT][CHAR_WIDTH], const CRGB &color) {
+	uint8_t height_offset = 2;
+	uint8_t width_offset = 2;
+	uint8_t m = CHAR_OFFSET;
+
+	// loop through character matrix
+	for (uint8_t i = 0; i < CHAR_HEIGHT; i++) {
+		for (uint8_t j = 0; j < CHAR_WIDTH; j++) {
+			//Serial.println(m);
+			if (number[i][j] == 1) {
+				leds[m] = color;
+			}
+			else {
+				leds[m] = CRGB::Black;
+			}
+			m++;
+		}
+		m += LEDS_PER_ROW - CHAR_WIDTH;
+	}
+	FastLED.show();
+}
+
